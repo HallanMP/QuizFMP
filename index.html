@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quiz FMP com Temporizador e Correção</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .quiz-container {
+    background: #fff;
+    max-width: 720px;
+    width: 100%;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+    text-align: center;
+  }
+  img.logo {
+    display: block;
+    max-width: 180px;
+    margin: 0 auto 20px;
+  }
+  h2 {
+    margin-bottom: 20px;
+    color: #222;
+    font-weight: 700;
+    font-size: 1.8rem;
+  }
+  .timer {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #d9534f;
+    margin-bottom: 20px;
+  }
+  .question {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #444;
+    text-align: left;
+  }
+  .options label {
+    display: block;
+    background: #f0f4ff;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    font-size: 1rem;
+    color: #222;
+    user-select: none;
+    border: 2px solid transparent;
+    text-align: left;
+  }
+  .options input[type="radio"] {
+    display: none;
+  }
+  .options input[type="radio"]:checked + label {
+    background: #4b6cb7;
+    color: white;
+    border-color: #3a539b;
+    box-shadow: 0 3px 10px rgba(75,108,183,0.6);
+  }
+  .options label:hover {
+    background: #dbe4ff;
+    box-shadow: 0 2px 8px rgba(75,108,183,0.4);
+  }
+  .buttons {
+    margin-top: 25px;
+  }
+  button {
+    background: #4b6cb7;
+    border: none;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 12px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    margin: 0 10px 10px;
+    box-shadow: 0 6px 15px rgba(75,108,183,0.5);
+    transition: background-color 0.25s ease, transform 0.2s ease;
+    user-select: none;
+  }
+  button:hover:not(:disabled) {
+    background: #3a539b;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(58,83,155,0.7);
+  }
+  button:disabled {
+    background: #bbb;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+  .result {
+    margin-top: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #222;
+    max-height: 400px;
+    overflow-y: auto;
+    text-align: left;
+  }
+  .result h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #4b6cb7;
+  }
+  .result ol {
+    padding-left: 20px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .result li {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eaeaea;
+  }
+  .correct {
+    color: #28a745;
+    font-weight: 700;
+  }
+  .wrong {
+    color: #d9534f;
+    font-weight: 700;
+  }
+  .result ol::-webkit-scrollbar {
+    width: 8px;
+  }
+  .result ol::-webkit-scrollbar-thumb {
+    background-color: #4b6cb7;
+    border-radius: 8px;
+  }
+  @media (max-width: 480px) {
+    .quiz-container {
+      padding: 20px 15px;
+    }
+    h2 {
+      font-size: 1.4rem;
+    }
+    .question, .options label {
+      font-size: 1rem;
+    }
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="quiz-container">
+    <img src="logo FMP.png" alt="Logo FMP" class="logo" />
+    <h2>Quiz FMP</h2>
+    <div class="timer" id="timer">Tempo restante: 30s</div>
+    <div id="quiz"></div>
+    <div class="buttons">
+      <button id="prevBtn" disabled>Anterior</button>
+      <button id="nextBtn">Próxima</button>
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+
+<script>
+const quizData = [
+  {
+    question: "1. O que diferencia a FMP das demais instituições de ensino da região?",
+    options: [
+      "A) A gratuidade no ensino",
+      "B) A estrutura moderna dos laboratórios",
+      "C) A proximidade com a comunidade local",
+      "D) Todas as alternativas anteriores"
+    ],
+    correctAnswer: 3
+  },
+  {
+    question: "2. Quais são os principais cursos oferecidos atualmente pela FMP?",
+    options: [
+      "A) Administração, ADS, e Pedagogia",
+      "B) Engenharia Civil, Medicina e Moda",
+      "C) Publicidade, Jornalismo e Turismo",
+      "D) Arquitetura, Gastronomia e Educação Física"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "3. A FMP é uma instituição pública, privada ou comunitária?",
+    options: [
+      "A) Pública",
+      "B) Privada",
+      "C) Comunitária",
+      "D) Filantrópica"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "4. Qual é o foco principal da missão da FMP?",
+    options: [
+      "A) Garantir lucros",
+      "B) Promover ensino superior de qualidade e acessível",
+      "C) Ser referência em moda",
+      "D) Oferecer cursos técnicos"
+    ],
+    correctAnswer: 1
+  },
+  {
+    question: "5. A FMP oferece apoio ao aluno em quais áreas?",
+    options: [
+      "A) Somente financeiro",
+      "B) Apoio pedagógico e psicológico",
+      "C) Apenas orientação de carreira",
+      "D) Não há apoio específico"
+    ],
+    correctAnswer: 1
+  },
+  {
+    question: "6. Qual a localização da FMP?",
+    options: [
+      "A) Centro de Florianópolis",
+      "B) Palhoça",
+      "C) São José",
+      "D) Biguaçu"
+    ],
+    correctAnswer: 1
+  },
+  {
+    question: "7. Qual modelo de ingresso é utilizado pela FMP?",
+    options: [
+      "A) Apenas vestibular próprio",
+      "B) Apenas ENEM",
+      "C) Sistema de Classificação Unificada e outros meios",
+      "D) Sorteio público"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "8. Quais os principais recursos disponíveis no campus da FMP?",
+    options: [
+      "A) Laboratórios modernos",
+      "B) Biblioteca digital e física",
+      "C) Salas climatizadas",
+      "D) Todos os anteriores"
+    ],
+    correctAnswer: 3
+  },
+  {
+    question: "9. Os professores da FMP possuem qual nível de formação predominante?",
+    options: [
+      "A) Graduação",
+      "B) Pós-doutorado",
+      "C) Mestrado e Doutorado",
+      "D) Ensino técnico"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "10. A FMP incentiva a iniciação científica?",
+    options: [
+      "A) Sim, com projetos de pesquisa",
+      "B) Apenas em pós-graduação",
+      "C) Não",
+      "D) Apenas com parcerias internacionais"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "11. Quais áreas têm projetos de extensão na FMP?",
+    options: [
+      "A) Cultura, meio ambiente e educação",
+      "B) Somente cultura",
+      "C) Apenas esporte",
+      "D) Não há projetos de extensão"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "12. Existe apoio à empregabilidade na FMP?",
+    options: [
+      "A) Sim, com setor próprio e parcerias",
+      "B) Apenas indicação informal",
+      "C) Nenhum apoio",
+      "D) Somente para formados"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "13. Os alunos participam da gestão acadêmica?",
+    options: [
+      "A) Sim, por meio de centros acadêmicos",
+      "B) Apenas no fim do curso",
+      "C) Não há participação estudantil",
+      "D) Apenas por pesquisas de opinião"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "14. A FMP realiza atividades culturais?",
+    options: [
+      "A) Sim, frequentemente",
+      "B) Não",
+      "C) Somente no final do ano",
+      "D) Apenas virtuais"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "15. Como os alunos avaliam a qualidade da FMP?",
+    options: [
+      "A) Excelente",
+      "B) Regular",
+      "C) Insatisfatória",
+      "D) Não há dados"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "16. A FMP possui convênios com empresas para estágio?",
+    options: [
+      "A) Sim",
+      "B) Não",
+      "C) Apenas com ONGs",
+      "D) Apenas com escolas"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "17. Que tipo de biblioteca a FMP oferece?",
+    options: [
+      "A) Apenas digital",
+      "B) Apenas física",
+      "C) Nenhuma",
+      "D) Digital e física"
+    ],
+    correctAnswer: 3
+  },
+  {
+    question: "18. Os alunos têm acesso a tecnologia moderna?",
+    options: [
+      "A) Sim, com laboratórios atualizados",
+      "B) Não",
+      "C) Apenas em alguns cursos",
+      "D) Somente no TCC"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "19. Como a FMP contribui com a comunidade local?",
+    options: [
+      "A) Com projetos sociais e educacionais",
+      "B) Não se envolve",
+      "C) Apenas com eventos internos",
+      "D) Apenas por redes sociais"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "20. Quais são os diferenciais pedagógicos da FMP?",
+    options: [
+      "A) Apoio individualizado",
+      "B) Corpo docente qualificado",
+      "C) Metodologia ativa de ensino",
+      "D) Todos os anteriores"
+    ],
+    correctAnswer: 3
+  }
+];
+
+const quizEl = document.getElementById('quiz');
+const timerEl = document.getElementById('timer');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const resultEl = document.getElementById('result');
+
+let currentQuestionIndex = 0;
+let timer;
+let timeLeft = 30;
+const userAnswers = new Array(quizData.length).fill(null);
+
+function startTimer() {
+  clearInterval(timer);
+  timeLeft = 30;
+  timerEl.textContent = `Tempo restante: ${timeLeft}s`;
+  timer = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = `Tempo restante: ${timeLeft}s`;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      // Avança automaticamente para a próxima pergunta se o usuário não respondeu
+      if (userAnswers[currentQuestionIndex] === null) {
+        userAnswers[currentQuestionIndex] = null; // deixa null explicitamente
+      }
+      nextQuestion();
+    }
+  }, 1000);
+}
+
+function loadQuestion() {
+  const questionData = quizData[currentQuestionIndex];
+  let html = `<div class="question">${questionData.question}</div><div class="options">`;
+  questionData.options.forEach((option, index) => {
+    const checked = userAnswers[currentQuestionIndex] === index ? 'checked' : '';
+    html += `
+      <input type="radio" id="option${index}" name="answer" value="${index}" ${checked} />
+      <label for="option${index}">${option}</label>
+    `;
+  });
+  html += `</div>`;
+  quizEl.innerHTML = html;
+
+  // Atualiza botões
+  prevBtn.disabled = currentQuestionIndex === 0;
+  nextBtn.textContent = currentQuestionIndex === quizData.length - 1 ? 'Finalizar' : 'Próxima';
+
+  startTimer();
+
+  // Adiciona evento para capturar resposta ao selecionar
+  const optionsInputs = document.querySelectorAll('input[name="answer"]');
+  optionsInputs.forEach(input => {
+    input.addEventListener('change', () => {
+      userAnswers[currentQuestionIndex] = Number(input.value);
+    });
+  });
+}
+
+function nextQuestion() {
+  if (currentQuestionIndex < quizData.length - 1) {
+    currentQuestionIndex++;
+    loadQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function prevQuestion() {
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
+    loadQuestion();
+  }
+}
+
+function showResult() {
+  clearInterval(timer);
+  quizEl.style.display = 'none';
+  prevBtn.style.display = 'none';
+  nextBtn.style.display = 'none';
+  timerEl.style.display = 'none';
+
+  let score = 0;
+  let html = '<h3>Resultado do Quiz</h3><ol>';
+
+  quizData.forEach((q, i) => {
+    const userAnswer = userAnswers[i];
+    const correctIndex = q.correctAnswer;
+    const correctText = q.options[correctIndex];
+    const userText = userAnswer !== null ? q.options[userAnswer] : 'Nenhuma resposta';
+
+    const correctClass = userAnswer === correctIndex ? 'correct' : 'wrong';
+    if (userAnswer === correctIndex) score++;
+
+    html += `<li>
+      <strong>${q.question}</strong><br />
+      Sua resposta: <span class="${correctClass}">${userText}</span><br />
+      Resposta correta: <span class="correct">${correctText}</span>
+    </li>`;
+  });
+
+  html += `</ol><p><strong>Você acertou ${score} de ${quizData.length} perguntas.</strong></p>`;
+  resultEl.innerHTML = html;
+  resultEl.style.display = 'block';
+}
+
+// Eventos dos botões
+nextBtn.addEventListener('click', () => {
+  // Se não respondeu, avisa para escolher ou deixa seguir?
+  // Aqui permite seguir, inclusive sem resposta
+  nextQuestion();
+});
+
+prevBtn.addEventListener('click', () => {
+  prevQuestion();
+});
+
+// Inicializa o quiz
+loadQuestion();
+
+</script>
+</body>
+</html>
